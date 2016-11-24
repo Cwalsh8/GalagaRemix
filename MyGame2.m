@@ -5,26 +5,23 @@
     
 %Main program
 %Note: Can't move up and down in Real Galaga...might change ours
-%All the bullets have to be in the exact same while loop where they both will
-%will be getting incremented and set and drew at the SAME TIME
+%Need to properly delete the bullets to prevent memory leaks
+%Then work on hit detection.
 
-    fig = figure('Color','black'); %Lets us use fig to reference our current figure
+    fig = figure('Color','black'); 
     global x; 
     global y;
     global ship;
     global count;
-    global yBullet;
-    global xBullet;
     global bullet;
     global enemy;
     global gameOver;
     global frames;
+    global shooterFire;
     x = 5; 
     y = 0;
     ship = plot(x,y,'*'); 
     count = 0;
-    yBullet = [];
-    xBullet = [];
     bullet = [];
     gameOver = false;
     frames = 0;
@@ -38,60 +35,71 @@
         end
     end
   
-    goRight = true;
-    while ~gameOver %While the game isn't over
+    goRight = true; %Enemies start off moving to the Right
+    while ~gameOver %Main game loop
         frames = frames + 1;
         set(fig,'KeyPressFcn',@getKeys); %Sets the figure so on a keypress, the function @getKeys runs
-        %This block makes the enemies sway left and right
-        lastShipX = get(enemy(:,size(enemy,2)), 'XData');
-        lastShipXX = cell2mat(lastShipX); 
-        firstShipX = get(enemy(:,2), 'XData');
-        firstShipXX = cell2mat(firstShipX);
-        for k = 1:size(lastShipXX)
-            if (lastShipXX(k) == 10)
-                goRight = false;
-            end
-        end
-        for k = 1:size(firstShipXX)
-            if (firstShipXX(k) == 0)
-                goRight = true;
-            end
-        end
-        if goRight
-            for i=1:4
-                for j=2:8
-                    set(enemy(i,j),'XData', get(enemy(i,j),'XData')+1);                     
-                end
-            end
-        else 
-            for i=1:4
-                for j=2:8
-                    set(enemy(i,j),'XData', get(enemy(i,j),'XData')-1); 
-                end
-            end
-        end
-        %This block will select a random enemy
-        randNum = randi([1 i],1);
-        randNum = [randNum randi([2 j],1)];
-        shooter = enemy(randNum(1), randNum(2));
-        shooterCoords = get(shooter,'XData');
-        shooterCoords = [shooterCoords get(shooter,'YData')-1];
-        shooterFire = plot(shooterCoords(1), shooterCoords(2), 'v', 'Color', 'y');
-        while shooterCoords(2) > 0
-            set(shooterFire, 'YData', shooterCoords(2));
-            drawnow;
-            shooterCoords = shooterCoords - .02;
-        end
-        delete(shooterFire);
         
-        pause(1);
-        %disp(frames);
+        %This block makes the enemies sway left and right
+        if (mod(frames,8) == 0)
+            lastShipX = get(enemy(:,size(enemy,2)), 'XData');
+            lastShipXX = cell2mat(lastShipX); 
+            firstShipX = get(enemy(:,2), 'XData');
+            firstShipXX = cell2mat(firstShipX);
+            for k = 1:size(lastShipXX)
+                if (lastShipXX(k) == 10)
+                    goRight = false;
+                end
+            end
+            for k = 1:size(firstShipXX)
+                if (firstShipXX(k) == 0)
+                    goRight = true;
+                end
+            end
+            if goRight
+                for i=1:4
+                    for j=2:8
+                        set(enemy(i,j),'XData', get(enemy(i,j),'XData')+1);                     
+                    end
+                end
+            else 
+                for i=1:4
+                    for j=2:8
+                        set(enemy(i,j),'XData', get(enemy(i,j),'XData')-1); 
+                    end
+                end
+            end
+        end
+        
+        %This block will select a random enemy every 10 frames
+        if (mod(frames,90) == 0 || frames == 1)
+            delete(shooterFire);
+            randNum = randi([1 i],1);
+            randNum = [randNum randi([2 j],1)];
+            shooter = enemy(randNum(1), randNum(2));
+            shooterCoords = get(shooter,'XData');
+            shooterCoords = [shooterCoords get(shooter,'YData')-1];
+            shooterFire = plot(shooterCoords(1), shooterCoords(2), 'v', 'Color', 'y');
+        end
+        
+        %This sets up the bullets position in the next frames, then draws it
+        set(shooterFire, 'YData', get(shooterFire, 'YData') - .1);
+        for p=1:length(bullet)
+            set(bullet(p), 'YData', get(bullet(p), 'YData') + .1);
+            %if (get(bullet(p), 'YData') > 10)
+            %    delete(bullet(p));
+            %end
+        end
+        drawnow;
+        
+        %This pause controls how fast the game loop
+        pause(.05); 
     end
     
     
 %List of setters
  
-    function setGlobalx(val) %Function used to set global variable
+    function setGlobalx(val) 
         global x
         x = val;
     end
@@ -106,16 +114,6 @@
         count = val;
     end
     
-    function setBulletY(val)
-        global yBullet
-        yBullet = val;
-    end
-    
-    function setBulletX(val)
-        global xBullet
-        xBullet = val;
-    end
-    
     function setBullet(val)
         global bullet
         bullet = val;
@@ -123,7 +121,7 @@
     
 %List of getters
     
-    function xG = getGlobalx %Function used to get global variable
+    function xG = getGlobalx 
         global x
         xG = x;
     end
@@ -143,16 +141,6 @@
         countG = count;
     end
     
-    function yBulletG = getBulletY
-        global yBullet
-        yBulletG = yBullet;
-    end
-    
-    function xBulletG = getBulletX
-        global xBullet
-        xBulletG = xBullet;
-    end
-    
     function bulletG = getBullet
         global bullet
         bulletG = bullet;
@@ -162,19 +150,19 @@
         global enemy
         enemyG = enemy;
     end
+    
 %List of functions
     
-    function getKeys (fig,evt) %Returns the modifier and key pressed by user. Also moves the ship depending on what was pressed. May turn into seperate functions if turns too ugly.
+    %Returns the modifier and key pressed by user. 
+    %Also moves the ship depending on what was pressed. 
+    function getKeys (fig,evt)
         mod = evt.Modifier;
         keyPressed = evt.Key;
         xG = getGlobalx;
         yG = getGlobaly;
         shipG = getShip;
         countG = getCount;
-        yBulletG = getBulletY;
-        xBulletG = getBulletX;
         bulletG = getBullet;
-        enemyG = getEnemy;
         if (strcmpi(keyPressed, 'leftarrow'))
             xG = xG-1;
             setGlobalx(xG);
@@ -197,34 +185,21 @@
         end
         if (strcmpi(keyPressed, 'space'))
             countG = countG + 1;
-            bulletG(countG) = plot(getGlobalx, getGlobaly+1, '^'); %Plots the bullet once we press space
-            yBulletG(countG) = get(bulletG(countG), 'YData'); %Should turn this into a 2x2 matrix that holds it's X and Y in one variable
-            xBulletG(countG) = get(bulletG(countG), 'XData'); 
-            fprintf('Shooting bullet Number %d\n', countG);
+            bulletG(countG) = plot(getGlobalx, getGlobaly+1, '^', 'Color', 'blue');
             setCount(countG);
             setBullet(bulletG);
-            setBulletY(yBulletG);
-            setBulletX(xBulletG);
-            for i = 1:numel(yBulletG)
-                if (yBulletG(i) ~= 10.25)
-                fprintf('Iteration #:%d Moving from Y:%d\n', i, yBulletG(i)); 
-                end
-                while ((yBulletG(i) < 10.25) && (yBulletG(i) > 0))
-                    yBulletG(i) = yBulletG(i) + .25;
-                    set(bulletG(i), 'YData', yBulletG(i));
-                    drawnow;
-                    setBulletY(yBulletG);
-                    %Under this is my hit detection test
-                    %try
-                     %   if (yBulletG(i)==get(enemy1G, 'YData') && xBulletG(countG)==get(enemy1G, 'XData') )
-                      %      delete(enemy1G);
-                      %  end
+            disp(length(bulletG));
+                   %Under this is my hit detection test
+                   %try
+                   %   if (yBulletG(i)==get(enemy1G, 'YData') && xBulletG(countG)==get(enemy1G, 'XData') )
+                   %      delete(enemy1G);
+                   %  end
                    %catch
                         %disp('It cant find the deleted ship but who cares');
-                    %end
-                    %Going to write a try-catch-continue for now to ignore error message
-                    %Need to re-wrire this all properly, but it does delete the object like I want.
-                end
-            end
+                   %end
+                   %Going to write a try-catch-continue for now to ignore error message
+                   %Need to re-wrire this all properly, but it does delete the object like I want.
+                %end
+            %end    
         end
     end 

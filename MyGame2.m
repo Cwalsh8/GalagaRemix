@@ -5,6 +5,8 @@
     
 %Main program
 %Note: Can't move up and down in Real Galaga...might change ours
+%All the bullets have to be in the exact same while loop where they both will
+%will be getting incremented and set and drew at the SAME TIME
 
     fig = figure('Color','black'); %Lets us use fig to reference our current figure
     global x; 
@@ -26,9 +28,8 @@
     bullet = [];
     gameOver = false;
     frames = 0;
-    title('Galaga Remix');
+    title('Galaga Remix', 'Color', [0.5 0 0.5]);
     axis([0,10,0,10]);
-    set(fig,'KeyPressFcn',@getKeys); %Sets the figure so on a keypress, the function @getKeys runs
     hold on %Keeps the axis the same when plotting/setting additional points
     set(gca,'Color','black'); 
     for i=1:4
@@ -38,8 +39,10 @@
     end
   
     goRight = true;
-    while ~gameOver
+    while ~gameOver %While the game isn't over
         frames = frames + 1;
+        set(fig,'KeyPressFcn',@getKeys); %Sets the figure so on a keypress, the function @getKeys runs
+        %This block makes the enemies sway left and right
         lastShipX = get(enemy(:,size(enemy,2)), 'XData');
         lastShipXX = cell2mat(lastShipX); 
         firstShipX = get(enemy(:,2), 'XData');
@@ -54,7 +57,6 @@
                 goRight = true;
             end
         end
-        disp(goRight);
         if goRight
             for i=1:4
                 for j=2:8
@@ -68,7 +70,21 @@
                 end
             end
         end
-        pause(.5);
+        %This block will select a random enemy
+        randNum = randi([1 i],1);
+        randNum = [randNum randi([2 j],1)];
+        shooter = enemy(randNum(1), randNum(2));
+        shooterCoords = get(shooter,'XData');
+        shooterCoords = [shooterCoords get(shooter,'YData')-1];
+        shooterFire = plot(shooterCoords(1), shooterCoords(2), 'v', 'Color', 'y');
+        while shooterCoords(2) > 0
+            set(shooterFire, 'YData', shooterCoords(2));
+            drawnow;
+            shooterCoords = shooterCoords - .02;
+        end
+        delete(shooterFire);
+        
+        pause(1);
         %disp(frames);
     end
     

@@ -2,30 +2,77 @@
     close all;
     clear all;
     clc;
+    
 %Main program
-    fig = figure; %Lets us use fig to reference our current figure
-    global x; %Sets x as a global variable
+%Note: Can't move up and down in Real Galaga...might change ours
+
+    fig = figure('Color','black'); %Lets us use fig to reference our current figure
+    global x; 
     global y;
     global ship;
     global count;
-    global bulletY;
+    global yBullet;
+    global xBullet;
     global bullet;
-    setGlobalx(5); %Sets the value of x using the function at the bottom
-    setGlobaly(2);
-    setCount(0);
-    setBulletY([]);
-    setBullet([]);
-    ship = plot(x,y,'*'); %Plots x and y, using the star design.
+    global enemy;
+    global gameOver;
+    global frames;
+    x = 5; 
+    y = 0;
+    ship = plot(x,y,'*'); 
+    count = 0;
+    yBullet = [];
+    xBullet = [];
+    bullet = [];
+    gameOver = false;
+    frames = 0;
     title('Galaga Remix');
     axis([0,10,0,10]);
     set(fig,'KeyPressFcn',@getKeys); %Sets the figure so on a keypress, the function @getKeys runs
-    hold on %Keeps the axis the same when adding additional points
+    hold on %Keeps the axis the same when plotting/setting additional points
+    set(gca,'Color','black'); 
+    for i=1:4
+        for j=2:8
+            enemy(i,j) = plot(j,10-i,'x','Color','r'); %Enemy's are going to be plotted by row.
+        end
+    end
+  
+    goRight = true;
+    while ~gameOver
+        frames = frames + 1;
+        lastShipX = get(enemy(:,size(enemy,2)), 'XData');
+        lastShipXX = cell2mat(lastShipX); 
+        firstShipX = get(enemy(:,2), 'XData');
+        firstShipXX = cell2mat(firstShipX);
+        for k = 1:size(lastShipXX)
+            if (lastShipXX(k) == 10)
+                goRight = false;
+            end
+        end
+        for k = 1:size(firstShipXX)
+            if (firstShipXX(k) == 0)
+                goRight = true;
+            end
+        end
+        disp(goRight);
+        if goRight
+            for i=1:4
+                for j=2:8
+                    set(enemy(i,j),'XData', get(enemy(i,j),'XData')+1);                     
+                end
+            end
+        else 
+            for i=1:4
+                for j=2:8
+                    set(enemy(i,j),'XData', get(enemy(i,j),'XData')-1); 
+                end
+            end
+        end
+        pause(.5);
+        %disp(frames);
+    end
     
- %What I have to do next
- %Make bullet an Array so multiple bullets can scale across the screen at once
- %-Multiple bullets still a problem
- 
- 
+    
 %List of setters
  
     function setGlobalx(val) %Function used to set global variable
@@ -44,10 +91,14 @@
     end
     
     function setBulletY(val)
-        global bulletY
-        bulletY = val;
+        global yBullet
+        yBullet = val;
     end
     
+    function setBulletX(val)
+        global xBullet
+        xBullet = val;
+    end
     
     function setBullet(val)
         global bullet
@@ -55,86 +106,108 @@
     end
     
 %List of getters
-%Should be able to merge these all into one function
-%One giant globalTemp = getGlobals; have them all in a list or something
     
-    function xTemp = getGlobalx %Function used to get global variable
+    function xG = getGlobalx %Function used to get global variable
         global x
-        xTemp = x;
+        xG = x;
     end
     
-    function yTemp = getGlobaly
+    function yG = getGlobaly
         global y
-        yTemp = y;
+        yG = y;
     end
     
-    function shipTemp = getShip
+    function shipG = getShip
         global ship
-        shipTemp = ship;
+        shipG = ship;
     end
     
-    function countTemp = getCount
+    function countG = getCount
         global count
-        countTemp = count;
+        countG = count;
     end
     
-    function bulletYTemp = getBulletY
-        global bulletY
-        bulletYTemp = bulletY;
+    function yBulletG = getBulletY
+        global yBullet
+        yBulletG = yBullet;
     end
     
-    function bulletTemp = getBullet
+    function xBulletG = getBulletX
+        global xBullet
+        xBulletG = xBullet;
+    end
+    
+    function bulletG = getBullet
         global bullet
-        bulletTemp = bullet;
+        bulletG = bullet;
     end    
+    
+    function enemyG = getEnemy
+        global enemy
+        enemyG = enemy;
+    end
 %List of functions
     
     function getKeys (fig,evt) %Returns the modifier and key pressed by user. Also moves the ship depending on what was pressed. May turn into seperate functions if turns too ugly.
         mod = evt.Modifier;
         keyPressed = evt.Key;
-        xTemp = getGlobalx;
-        yTemp = getGlobaly;
-        shipTemp = getShip;
-        countTemp = getCount;
-        bulletYTemp = getBulletY;
-        bulletTemp = getBullet;
+        xG = getGlobalx;
+        yG = getGlobaly;
+        shipG = getShip;
+        countG = getCount;
+        yBulletG = getBulletY;
+        xBulletG = getBulletX;
+        bulletG = getBullet;
+        enemyG = getEnemy;
         if (strcmpi(keyPressed, 'leftarrow'))
-            xTemp = xTemp-1;
-            setGlobalx(xTemp);
-            set(shipTemp, 'XData', getGlobalx, 'YData', getGlobaly);
+            xG = xG-1;
+            setGlobalx(xG);
+            set(shipG, 'XData', getGlobalx, 'YData', getGlobaly);
         end
         if (strcmpi(keyPressed, 'rightarrow'))
-            xTemp = xTemp+1;
-            setGlobalx(xTemp);
-            set(shipTemp, 'XData', getGlobalx, 'YData', getGlobaly);
+            xG = xG+1;
+            setGlobalx(xG);
+            set(shipG, 'XData', getGlobalx, 'YData', getGlobaly);
         end
         if (strcmpi(keyPressed, 'uparrow'))
-            yTemp = yTemp+1;
-            setGlobaly(yTemp);
-            set(shipTemp, 'XData', getGlobalx, 'YData', getGlobaly);
+            yG = yG+1;
+            setGlobaly(yG);
+            set(shipG, 'XData', getGlobalx, 'YData', getGlobaly);
         end
         if (strcmpi(keyPressed, 'downarrow'))
-            yTemp = yTemp-1;
-            setGlobaly(yTemp);
-            set(shipTemp, 'XData', getGlobalx, 'YData', getGlobaly);
+            yG = yG-1;
+            setGlobaly(yG);
+            set(shipG, 'XData', getGlobalx, 'YData', getGlobaly);
         end
         if (strcmpi(keyPressed, 'space'))
-            countTemp = countTemp + 1;
-            bulletTemp(countTemp) = plot(getGlobalx, getGlobaly+1, '^'); %Plots the bullet once we press space
-            bulletYTemp(countTemp) = get(bulletTemp(countTemp), 'YData');
-            fprintf('Shooting bullet Number %d\n', countTemp);
-            setCount(countTemp);
-            setBullet(bulletTemp);
-            setBulletY(bulletYTemp);
-            for i = 1:numel(bulletYTemp)
-                if (bulletYTemp(i) ~= 10.25)
-                fprintf('Iteration #:%d Moving from Y:%d\n', i, bulletYTemp(i));
+            countG = countG + 1;
+            bulletG(countG) = plot(getGlobalx, getGlobaly+1, '^'); %Plots the bullet once we press space
+            yBulletG(countG) = get(bulletG(countG), 'YData'); %Should turn this into a 2x2 matrix that holds it's X and Y in one variable
+            xBulletG(countG) = get(bulletG(countG), 'XData'); 
+            fprintf('Shooting bullet Number %d\n', countG);
+            setCount(countG);
+            setBullet(bulletG);
+            setBulletY(yBulletG);
+            setBulletX(xBulletG);
+            for i = 1:numel(yBulletG)
+                if (yBulletG(i) ~= 10.25)
+                fprintf('Iteration #:%d Moving from Y:%d\n', i, yBulletG(i)); 
                 end
-                while ((bulletYTemp(i) < 10.25) && (bulletYTemp(i) > 0))
-                    bulletYTemp(i) = bulletYTemp(i) + .25;
-                    set(bulletTemp(i), 'YData', bulletYTemp(i));
+                while ((yBulletG(i) < 10.25) && (yBulletG(i) > 0))
+                    yBulletG(i) = yBulletG(i) + .25;
+                    set(bulletG(i), 'YData', yBulletG(i));
                     drawnow;
-                    setBulletY(bulletYTemp);
+                    setBulletY(yBulletG);
+                    %Under this is my hit detection test
+                    %try
+                     %   if (yBulletG(i)==get(enemy1G, 'YData') && xBulletG(countG)==get(enemy1G, 'XData') )
+                      %      delete(enemy1G);
+                      %  end
+                   %catch
+                        %disp('It cant find the deleted ship but who cares');
+                    %end
+                    %Going to write a try-catch-continue for now to ignore error message
+                    %Need to re-wrire this all properly, but it does delete the object like I want.
                 end
             end
         end

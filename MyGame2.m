@@ -23,6 +23,7 @@
     ship = plot(x,y,'*'); 
     count = 0;
     bullet = [];
+    shooterFire = [];
     gameOver = false;
     frames = 0;
     title('Galaga Remix', 'Color', [0.5 0 0.5]);
@@ -36,6 +37,7 @@
     end
   
     goRight = true; %Enemies start off moving to the Right
+    num = 0;
     while ~gameOver %Main game loop
         frames = frames + 1;
         set(fig,'KeyPressFcn',@getKeys); %Sets the figure so on a keypress, the function @getKeys runs
@@ -72,23 +74,34 @@
         end
         
         %This block will select a random enemy every 10 frames
-        if (mod(frames,90) == 0 || frames == 1)
-            delete(shooterFire);
+        if (mod(frames,30) == 0 || frames == 1)
+            num = num + 1;
             randNum = randi([1 i],1);
             randNum = [randNum randi([2 j],1)];
             shooter = enemy(randNum(1), randNum(2));
             shooterCoords = get(shooter,'XData');
             shooterCoords = [shooterCoords get(shooter,'YData')-1];
-            shooterFire = plot(shooterCoords(1), shooterCoords(2), 'v', 'Color', 'y');
+            shooterFire(num) = plot(shooterCoords(1), shooterCoords(2), 'v', 'Color', 'y');
         end
         
         %This sets up the bullets position in the next frames, then draws it
-        set(shooterFire, 'YData', get(shooterFire, 'YData') - .1);
-        for p=1:length(bullet)
-            set(bullet(p), 'YData', get(bullet(p), 'YData') + .1);
-            %if (get(bullet(p), 'YData') > 10)
-            %    delete(bullet(p));
-            %end
+        for o = 1:length(shooterFire)
+            if ~isnan(shooterFire(o))
+                set(shooterFire(o), 'YData', get(shooterFire(o), 'YData') - .1);
+                if (get(shooterFire(o), 'YData') < 0)
+                    shooterFire(o) = NaN;
+                    disp(shooterFire(:));
+                end
+            end
+        end
+        for p = 1:length(bullet)
+            if ~isnan(bullet(p))
+                set(bullet(p), 'YData', get(bullet(p), 'YData') + .1);
+                if (get(bullet(p), 'YData') > 10)
+                    bullet(p) = NaN;
+                    disp(bullet(:));
+                end
+            end
         end
         drawnow;
         
@@ -164,22 +177,30 @@
         countG = getCount;
         bulletG = getBullet;
         if (strcmpi(keyPressed, 'leftarrow'))
-            xG = xG-1;
+            if ( xG > 0 )
+                xG = xG-1;
+            end
             setGlobalx(xG);
             set(shipG, 'XData', getGlobalx, 'YData', getGlobaly);
         end
         if (strcmpi(keyPressed, 'rightarrow'))
-            xG = xG+1;
+            if ( xG < 10 )
+                xG = xG+1;
+            end
             setGlobalx(xG);
             set(shipG, 'XData', getGlobalx, 'YData', getGlobaly);
         end
         if (strcmpi(keyPressed, 'uparrow'))
-            yG = yG+1;
+            if ( yG < 10 )
+                yG = yG+1;
+            end
             setGlobaly(yG);
             set(shipG, 'XData', getGlobalx, 'YData', getGlobaly);
         end
         if (strcmpi(keyPressed, 'downarrow'))
-            yG = yG-1;
+            if ( yG > 0 )
+                yG = yG-1;
+            end
             setGlobaly(yG);
             set(shipG, 'XData', getGlobalx, 'YData', getGlobaly);
         end
@@ -188,7 +209,6 @@
             bulletG(countG) = plot(getGlobalx, getGlobaly+1, '^', 'Color', 'blue');
             setCount(countG);
             setBullet(bulletG);
-            disp(length(bulletG));
                    %Under this is my hit detection test
                    %try
                    %   if (yBulletG(i)==get(enemy1G, 'YData') && xBulletG(countG)==get(enemy1G, 'XData') )
